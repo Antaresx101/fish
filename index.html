@@ -413,7 +413,7 @@
             const devastatingWoundsState = abilityStates['devastating-wounds'][currentStates['devastating-wounds']];
 
             // Attacker profile string
-            let attackerString = `<strong>${attacks}x</strong> / <strong>BS${hitRoll}+</strong> / <strong>S${strength}</strong> / <strong>-${ap}AP</strong> / <strong>${damage}</strong>`;
+            let attackerString = `<strong>${attacks}x</strong> / <strong>BS${hitRoll}+</strong> / <strong>S${strength}</strong> / <strong>-${ap}AP</strong> / <strong>${damage}</strong>`.replace("--","-");
             if (rerollHitsState !== 'Inactive') attackerString += ` / ${rerollHitsState}`;
             if (sustainedHitsState !== 'Inactive') attackerString += ` / ${sustainedHitsState}`;
             if (lethalHitsState !== 'Inactive') attackerString += ` / ${lethalHitsState}`;
