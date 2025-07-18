@@ -105,25 +105,30 @@
             color: #c7d2fe;
             white-space: pre-wrap;
         }
-        #copy-button {
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+        #copy-button, #format-button {
             background-color: #2a3756;
             border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            padding: 0.5rem 1.5rem;
             color: #c7d2fe;
             cursor: pointer;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+            font-size: 0.85rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s, transform 0.1s;
         }
-        #copy-button:hover {
+        #copy-button:hover, #format-button:hover {
             background-color: #3b4a6b;
         }
-        #copy-button:active {
+        #copy-button:active, #format-button:active {
             transform: scale(0.95);
         }
-        #copy-button.copied {
+        #copy-button.copied, #format-button.formatted {
             background-color: #10b981;
             color: #ffffff;
         }
@@ -153,9 +158,9 @@
                 font-size: 0.85rem;
                 white-space: pre-wrap;
             }
-            #copy-button {
-                font-size: 0.85rem;
-                padding: 0.5rem 1rem;
+            #copy-button, #format-button {
+                font-size: 0.8rem;
+                padding: 0.3rem 1rem;
             }
         }
     </style>
@@ -175,7 +180,10 @@
             <button class="ability-button" id="devastating-wounds" title="Devastating Wounds: Inactive"><img src="icons/inactive.png" alt="Inactive"></button>
         </div>
         <div id="result"></div>
-        <button id="copy-button">Copy to Clipboard</button>
+        <div class="action-buttons">
+            <button id="copy-button">Copy to Clipboard</button>
+            <button id="format-button">Format Input</button>
+        </div>
     </div>
     <script>
         const abilityStates = {
@@ -268,12 +276,8 @@
             const resultDiv = document.getElementById('result');
             const copyButton = document.getElementById('copy-button');
             let text = resultDiv.innerHTML;
-
             text = text.replace(/<strong>/g, '**').replace(/<\/strong>/g, '**');
-
-            // Copy to clipboard
             navigator.clipboard.writeText(text).then(() => {
-
                 copyButton.textContent = 'Copied!';
                 copyButton.classList.add('copied');
                 setTimeout(() => {
@@ -289,14 +293,47 @@
             });
         }
 
+        function formatInput() {
+            const attackerInput = document.getElementById('attacker');
+            const formatButton = document.getElementById('format-button');
+            const parts = attackerInput.value.split(/[^a-zA-Z0-9-+]+/).filter(part => part.trim()).map(part => part.trim());
+            if (parts.length !== 5) {
+                formatButton.textContent = 'Invalid Input';
+                setTimeout(() => {
+                    formatButton.textContent = 'Format Input';
+                }, 2000);
+                return;
+            }
+            const attacks = parts[0].match(/[\dD\+\/-]+/)?.[0];
+            const hitRoll = parts[1].match(/[\dD\+\/-]+/)?.[0];
+            const strength = parts[2].match(/[\dD\+\/-]+/)?.[0];
+            const ap = parts[3].match(/-?[\dD\+\/-]+/)?.[0];
+            const damage = parts[4].match(/[\dD\+\/-]+/)?.[0];
+            if (!attacks || !hitRoll || !strength || !ap || !damage) {
+                formatButton.textContent = 'Invalid Input';
+                setTimeout(() => {
+                    formatButton.textContent = 'Format Input';
+                }, 2000);
+                return;
+            }
+            attackerInput.value = `${attacks}x / BS${hitRoll}+ / S${strength} / -${ap}AP / ${damage}`.replace("--","");
+            formatButton.textContent = 'Formatted!';
+            formatButton.classList.add('formatted');
+            setTimeout(() => {
+                formatButton.textContent = 'Format Input';
+                formatButton.classList.remove('formatted');
+            }, 2000);
+            calculateDamage();
+        }
+
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
             const defenderProfiles = ["T3 / 1W / 5+                ",
                                     "T4 / 2W / 3+                ",
-                                    "T5 / 3W / 2+ / 4++    ",
-                                    "T6 / 3W / 2+ / 4++    ",
-                                    "T7 / 4W / 2+ / 4++    ",
-                                    "T9 / 14W / 3+             ",
+                                    "T5 / 3W / 2+ / 4++     ",
+                                    "T6 / 3W / 2+ / 4++     ",
+                                    "T7 / 4W / 2+ / 4++     ",
+                                    "T9 / 14W / 3+              ",
                                     "T10 / 11W / 2+            ",
                                     "T10 / 14W / 3+            ",
                                     "T11 / 14W / 3+            ",
@@ -452,6 +489,7 @@
 
         document.getElementById('attacker').addEventListener('input', calculateDamage);
         document.getElementById('copy-button').addEventListener('click', copyToClipboard);
+        document.getElementById('format-button').addEventListener('click', formatInput);
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
