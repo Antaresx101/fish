@@ -100,12 +100,12 @@
         .ability-button.sustained-3 img { width: 28px; height: 28px; }
         .ability-button.sustained-D3 img { width: 30px; height: 30px; }
         #result {
-            margin-top: 1rem;
+            margin-top: 0rem;
             padding: 1rem;
             background-color: #2a3756;
             border-radius: 8px;
             font-size: 0.9rem;
-            line-height: 1.5;
+            line-height: 1;
             color: #c7d2fe;
             white-space: pre-wrap;
         }
@@ -232,6 +232,10 @@
             'devastating-wounds': 0
         };
 
+        // Copy String
+        let resultString = "";
+
+
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
             const stateIndex = currentStates[buttonId];
@@ -258,24 +262,55 @@
         });
 
         function averageDice(expr) {
-            expr = expr.replace(/\s+/g, '');
-            expr = expr.replace(/(\d*)D(\d+)/gi, (_, countRaw, sidesRaw) => {
-                const count = parseInt(countRaw || "1");
+            expr = expr.replace(/\s+/g, '').toUpperCase();
+            
+            if (!expr || !/[\dD\+-]/.test(expr)) {
+                return 1; // Default to 1
+            }
+
+            // Averages
+            expr = expr.replace(/(\d*)D(\d+)/gi, (match, countRaw, sidesRaw) => {
+                const count = parseInt(countRaw || '1'); // Default to 1
                 const sides = parseInt(sidesRaw);
-                const avg = count * ((sides + 1) / 2);
-                return Math.max(1, avg);
+                if (isNaN(count) || isNaN(sides) || sides < 1) {
+                    return '1';
+                }
+                return (count * (sides + 1) / 2).toString();
             });
+
+            // Arithmetic expressions
             try {
-                return Function('"use strict";return (' + expr + ')')();
+                const tokens = expr.match(/(\d*\.?\d+|\+|-)/g);
+                if (!tokens) {
+                    return 1;
+                }
+
+                let result = 0;
+                let currentOperator = '+';
+                for (const token of tokens) {
+                    if (token === '+' || token === '-') {
+                        currentOperator = token;
+                    } else {
+                        const num = parseFloat(token);
+                        if (isNaN(num)) {
+                            return 1; // Invalid number
+                        }
+                        if (currentOperator === '+') {
+                            result += num;
+                        } else if (currentOperator === '-') {
+                            result -= num;
+                        }
+                    }
+                }
+                return Math.max(1, result);
             } catch (e) {
-                return parseInt(expr) || 0;
+                return 1;
             }
         }
 
         function copyToClipboard() {
-            const resultDiv = document.getElementById('result');
             const copyButton = document.getElementById('copy-button');
-            let text = resultDiv.innerHTML;
+            let text = resultString;
             text = text.replace(/<strong>/g, '**').replace(/<\/strong>/g, '**');
             navigator.clipboard.writeText(text).then(() => {
                 copyButton.textContent = 'Copied!';
@@ -316,7 +351,7 @@
                 }, 2000);
                 return;
             }
-            attackerInput.value = `${attacks}x/BS${hitRoll}+/${strength}/${ap}AP/${damage}`;
+            attackerInput.value = `${attacks}x / BS${hitRoll}+ / S${strength} / -${ap}AP / ${damage}`.replace("++","+");
             formatButton.textContent = 'Formatted!';
             formatButton.classList.add('formatted');
             setTimeout(() => {
@@ -328,22 +363,24 @@
 
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
-            const defenderProfiles = ["T3 / 1W / 5+                ",
-                                    "T4 / 2W / 3+                ",
-                                    "T5 / 3W / 2+ / 4++    ",
-                                    "T6 / 3W / 2+ / 4++    ",
-                                    "T7 / 4W / 2+ / 4++    ",
-                                    "T9 / 14W / 3+             ",
-                                    "T10 / 11W / 2+            ",
-                                    "T10 / 14W / 3+            ",
-                                    "T11 / 14W / 3+            ",
-                                    "T11 / 24W / 3+            ",
-                                    "T11 / 24W / 3+ / 5++ ",
-                                    "T12 / 24W / 2+            "];
+            const defenderProfiles = [
+                "T3 / 1W / 5+                ",
+                "T4 / 2W / 3+                ",
+                "T5 / 3W / 2+ / 4++    ",
+                "T6 / 3W / 2+ / 4++    ",
+                "T7 / 4W / 2+ / 4++    ",
+                "T9 / 14W / 3+             ",
+                "T10 / 11W / 2+            ",
+                "T10 / 14W / 3+            ",
+                "T11 / 14W / 3+            ",
+                "T11 / 24W / 3+            ",
+                "T11 / 24W / 3+ / 5++ ",
+                "T12 / 24W / 2+            "
+            ];
 
             const attackerParts = attackerInput.split(/[^a-zA-Z0-9-+]+/).filter(part => part.trim()).map(part => part.trim());
             if (attackerParts.length !== 5) {
-                document.getElementById('result').innerHTML = "Use a format like 2,BS3+,5,-2AP,1 or 2/BS3+/5/-2AP/1 dmg etc.";
+                document.getElementById('result').innerHTML = "Use a format like 2,BS3+,5,-2AP,1 or 2/BS3+/5/-2AP/1 etc.";
                 return;
             }
 
@@ -375,13 +412,22 @@
             const rerollWoundsState = abilityStates['reroll-wounds'][currentStates['reroll-wounds']];
             const devastatingWoundsState = abilityStates['devastating-wounds'][currentStates['devastating-wounds']];
 
-            let resultString = `<strong>${attacks}x / BS${hitRoll}+ / S${strength} / -${ap}AP / ${damage} DMG</strong>`;
-            if (rerollHitsState !== 'Inactive') resultString += ` / ${rerollHitsState}`;
-            if (sustainedHitsState !== 'Inactive') resultString += ` / ${sustainedHitsState}`;
-            if (lethalHitsState !== 'Inactive') resultString += ` / ${lethalHitsState}`;
-            if (rerollWoundsState !== 'Inactive') resultString += ` / ${rerollWoundsState}`;
-            if (devastatingWoundsState !== 'Inactive') resultString += ` / ${devastatingWoundsState}`;
-            resultString += ` vs\n`;
+            // Attacker profile string
+            let attackerString = `<strong>${attacks}x</strong> / <strong>BS${hitRoll}+</strong> / <strong>S${strength}</strong> / <strong>-${ap}AP</strong> / <strong>${damage}</strong>`;
+            if (rerollHitsState !== 'Inactive') attackerString += ` / ${rerollHitsState}`;
+            if (sustainedHitsState !== 'Inactive') attackerString += ` / ${sustainedHitsState}`;
+            if (lethalHitsState !== 'Inactive') attackerString += ` / ${lethalHitsState}`;
+            if (rerollWoundsState !== 'Inactive') attackerString += ` / ${rerollWoundsState}`;
+            if (devastatingWoundsState !== 'Inactive') attackerString += ` / ${devastatingWoundsState}`;
+
+
+            // Table
+            let resultTable = `<div style="margin: 0; line-height: 1.5;">Attacker:\n${attackerString}</div>
+                            <div style="margin: -10px 0px -30px 0px; line-height: 1.5;">Defenders:</div>
+                            <table style="width: 100%; border-collapse: collapse; margin: 0;">
+                            <tr style="background-color: #3b4a6b;">
+                            </tr>`;
+            resultString = attackerString + "\n";
 
             for (let defenderInput of defenderProfiles) {
                 if (defenderInput.startsWith("#")) continue;
@@ -392,99 +438,112 @@
                 invul = parseInt(invul.match(/\d+/)?.[0]) || 7;
                 fnp = parseInt(fnp.match(/\d+/)?.[0]) || 7;
 
-                if (toughness === 0 || wounds === 0) {
-                    resultString += `${defenderInput}: Invalid defender stats\n`;
-                    continue;
-                }
+                let slainValue = "Invalid";
+                let damageValue = "Invalid";
+                let modelsSlain = 0, totalDamage = 0;
 
-                let critsHits = (1/6) * attacks;
-                let effectiveHitRoll = Math.min(hitRoll, 6);
-                let pHit = (7 - effectiveHitRoll) / 6;
+                if (toughness !== 0 && wounds !== 0) {
+                    let critsHits = (1/6) * attacks;
+                    let effectiveHitRoll = Math.min(hitRoll, 6);
+                    let pHit = (7 - effectiveHitRoll) / 6;
 
-                if (rerollHitsState === 'Reroll 1s Hit') {
-                    pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
-                    critsHits = (1 + (1/6)) * (1/6) * attacks;
-                } else if (rerollHitsState === 'Reroll Hits') {
-                    pHit = pHit * (2 - pHit);
-                    critsHits = (2 - pHit) * (1/6) * attacks;
-                } else if (rerollHitsState === 'Fish for Crits') {
-                    pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
-                    critsHits = (1 + (5/6)) * (1/6) * attacks;
-                }
-
-                let sustainedHits = 0;
-                if (sustainedHitsState !== 'Inactive') {
-                    const sustainedNumber = sustainedHitsState === 'Sustained Hits D3' ? '2' : sustainedHitsState.match(/\d+/)?.[0] || '0';
-                    if (sustainedNumber) {
-                        sustainedHits = parseInt(sustainedNumber) * critsHits;
+                    if (rerollHitsState === 'Reroll 1s Hit') {
+                        pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
+                        critsHits = (1 + (1/6)) * (1/6) * attacks;
+                    } else if (rerollHitsState === 'Reroll Hits') {
+                        pHit = pHit * (2 - pHit);
+                        critsHits = (2 - pHit) * (1/6) * attacks;
+                    } else if (rerollHitsState === 'Fish for Crits') {
+                        pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
+                        critsHits = (1 + (5/6)) * (1/6) * attacks;
                     }
+
+                    let sustainedHits = 0;
+                    if (sustainedHitsState !== 'Inactive') {
+                        const sustainedNumber = sustainedHitsState === 'Sustained Hits D3' ? '2' : sustainedHitsState.match(/\d+/)?.[0] || '0';
+                        if (sustainedNumber) {
+                            sustainedHits = parseInt(sustainedNumber) * critsHits;
+                        }
+                    }
+
+                    let effectiveHits = (attacks * pHit) + sustainedHits;
+
+                    let lethalHits = 0;
+                    if (lethalHitsState !== 'Inactive') {
+                        effectiveHits = effectiveHits - critsHits;
+                        lethalHits = critsHits;
+                    }
+
+                    let woundRoll;
+                    if (strength >= 2 * toughness) {
+                        woundRoll = 2;
+                    } else if (strength > toughness) {
+                        woundRoll = 3;
+                    } else if (strength === toughness) {
+                        woundRoll = 4;
+                    } else if (2 * strength > toughness) {
+                        woundRoll = 5;
+                    } else {
+                        woundRoll = 6;
+                    }
+
+                    let critWounds = 0;
+                    let effectiveWoundRoll = Math.min(woundRoll, 6);
+                    let pWound = (7 - effectiveWoundRoll) / 6;
+
+                    if (rerollWoundsState === 'Reroll 1s Wounds') {
+                        pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
+                        critWounds = (1 + (1/6)) * (1/6) * attacks;
+                    } else if (rerollWoundsState === 'Reroll Wounds') {
+                        pWound = pWound * (2 - pWound);
+                        critWounds = (2 - pWound) * (1/6) * attacks;
+                    } else if (rerollWoundsState === 'Fish for Crits') {
+                        pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
+                        critWounds = (1 + (5/6)) * (1/6) * attacks;
+                    }
+
+                    let effectiveWounds = effectiveHits * pWound;
+
+                    let devWounds = 0;
+                    if (devastatingWoundsState !== 'Inactive') {
+                        effectiveWounds = effectiveWounds - critWounds;
+                        devWounds = critWounds;
+                    }
+
+                    let pSave = Math.min(invul, Math.max(2, save + ap));
+                    if (pSave > 6) {
+                        pSave = 1;
+                    } else {
+                        pSave = (pSave - 1) / 6;
+                    }
+
+                    let pFNP = fnp > 6 ? 1 : (fnp - 1) / 6;
+                    if (devastatingWoundsState === 'Devastating Wounds') {
+                        pSave = pSave * (5/6);
+                        pFNP = pFNP * (5/6);
+                    }
+
+                    const successfulAttacks = ((effectiveWounds + lethalHits) * pSave + devWounds) * pFNP;
+                    const attacksPerModel = Math.ceil(wounds / damage);
+                    const modelsSlain = successfulAttacks / attacksPerModel;
+                    const totalDamage = successfulAttacks * damage;
+
+                    slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain`;
+                    damageValue = `<strong>${totalDamage.toFixed(2)}</strong> dmg`;
                 }
 
-                let effectiveHits = (attacks * pHit) + sustainedHits;
-
-                let lethalHits = 0;
-                if (lethalHitsState !== 'Inactive') {
-                    effectiveHits = effectiveHits - critsHits;
-                    lethalHits = critsHits;
-                }
-
-                let woundRoll;
-                if (strength >= 2 * toughness) {
-                    woundRoll = 2;
-                } else if (strength > toughness) {
-                    woundRoll = 3;
-                } else if (strength === toughness) {
-                    woundRoll = 4;
-                } else if (2 * strength > toughness) {
-                    woundRoll = 5;
-                } else {
-                    woundRoll = 6;
-                }
-
-                let critWounds = 0;
-                let effectiveWoundRoll = Math.min(woundRoll, 6);
-                let pWound = (7 - effectiveWoundRoll) / 6;
-
-                if (rerollWoundsState === 'Reroll 1s Wounds') {
-                    pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
-                    critWounds = (1 + (1/6)) * (1/6) * attacks;
-                } else if (rerollWoundsState === 'Reroll Wounds') {
-                    pWound = pWound * (2 - pWound);
-                    critWounds = (2 - pWound) * (1/6) * attacks;
-                } else if (rerollWoundsState === 'Fish for Crits') {
-                    pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
-                    critWounds = (1 + (5/6)) * (1/6) * attacks;
-                }
-
-                let effectiveWounds = effectiveHits * pWound;
-
-                let devWounds = 0;
-                if (devastatingWoundsState !== 'Inactive') {
-                    effectiveWounds = effectiveWounds - critWounds;
-                    devWounds = critWounds;
-                }
-
-                let pSave = Math.min(invul, Math.max(2, save + ap));
-                if (pSave > 6) {
-                    pSave = 1;
-                } else {
-                    pSave = (pSave - 1) / 6;
-                }
-
-                let pFNP = fnp > 6 ? 1 : (fnp - 1) / 6;
-                if (devastatingWoundsState === 'Devastating Wounds') {
-                    pSave = pSave * (5/6);
-                    pFNP = pFNP * (5/6);
-                }
-
-                const successfulAttacks = ((effectiveWounds + lethalHits) * pSave + devWounds) * pFNP;
-                const modelsSlain = successfulAttacks * (damage / wounds);
-                const totalDamage = successfulAttacks * damage;
-
-                resultString += `<strong>${defenderInput}: ${modelsSlain.toFixed(2)}</strong> slain | <strong>${totalDamage.toFixed(2)}</strong> DMG\n`;
+                resultString += `<strong>${defenderInput}: ${modelsSlain.toFixed(2)}</strong> slain | <strong>${totalDamage.toFixed(2)}</strong> dmg\n`;
+                
+                resultTable += `<tr style="background-color: #2a3756;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${defenderInput.trim()}</td>
+                                    <td style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${slainValue}</td>
+                                    <td style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${damageValue}</td>
+                                </tr>`;
             }
 
-            document.getElementById('result').innerHTML = resultString;
+            resultTable += `</table>`;
+
+            document.getElementById('result').innerHTML = resultTable;
         }
 
 
