@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
     <title>Warhammer Damage Calculator</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
     <style>
         body {
             background-color: #1e2a44;
@@ -111,7 +115,7 @@
             margin-top: 1rem;
             justify-content: center;
         }
-        #copy-button, #format-button {
+        #copy-button, #format-button, #install-button {
             background-color: #2a3756;
             border: none;
             border-radius: 4px;
@@ -122,43 +126,37 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s, transform 0.1s;
         }
-        #copy-button:hover, #format-button:hover {
+        #copy-button:hover, #format-button:hover, #install-button:hover {
             background-color: #3b4a6b;
         }
-        #copy-button:active, #format-button:active {
+        #copy-button:active, #format-button:active, #install-button:active {
             transform: scale(0.95);
         }
-        #copy-button.copied, #format-button.formatted {
+        #copy-button.copied, #format-button.formatted, #install-button.installed {
             background-color: #10b981;
             color: #ffffff;
         }
+        #install-instructions {
+            display: none;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #c7d2fe;
+            text-align: center;
+        }
+        @media (display-mode: browser) {
+            #install-instructions { display: block; }
+        }
         @media (max-width: 400px) {
-            h1 {
-                font-size: 1.25rem;
-            }
-            label {
-                font-size: 0.85rem;
-            }
-            input {
-                font-size: 0.9rem;
-                padding: 0.5rem;
-            }
-            .ability-button {
-                width: 40px;
-                height: 40px;
-            }
-            .ability-button img {
-                width: 20px;
-                height: 20px;
-            }
+            h1 { font-size: 1.25rem; }
+            label { font-size: 0.85rem; }
+            input { font-size: 0.9rem; padding: 0.5rem; }
+            .ability-button { width: 40px; height: 40px; }
+            .ability-button img { width: 20px; height: 20px; }
             .ability-button.sustained-2 img { width: 22px; height: 22px; }
             .ability-button.sustained-3 img { width: 24px; height: 24px; }
             .ability-button.sustained-D3 img { width: 26px; height: 26px; }
-            #result {
-                font-size: 0.85rem;
-                white-space: pre-wrap;
-            }
-            #copy-button, #format-button {
+            #result { font-size: 0.85rem; white-space: pre-wrap; }
+            #copy-button, #format-button, #install-button {
                 font-size: 0.8rem;
                 padding: 0.3rem 1rem;
             }
@@ -183,7 +181,9 @@
         <div class="action-buttons">
             <button id="copy-button">Copy to Clipboard</button>
             <button id="format-button">Format Input</button>
+            <button id="install-button">Add to Homescreen</button>
         </div>
+        <div id="install-instructions"></div>
     </div>
     <script>
         const abilityStates = {
@@ -316,7 +316,7 @@
                 }, 2000);
                 return;
             }
-            attackerInput.value = `${attacks}x / BS${hitRoll}+ / S${strength} / -${ap}AP / ${damage}`.replace("--","");
+            attackerInput.value = `${attacks}x/BS${hitRoll}+/${strength}/${ap}AP/${damage}`;
             formatButton.textContent = 'Formatted!';
             formatButton.classList.add('formatted');
             setTimeout(() => {
@@ -330,10 +330,10 @@
             const attackerInput = document.getElementById('attacker').value;
             const defenderProfiles = ["T3 / 1W / 5+                ",
                                     "T4 / 2W / 3+                ",
-                                    "T5 / 3W / 2+ / 4++     ",
-                                    "T6 / 3W / 2+ / 4++     ",
-                                    "T7 / 4W / 2+ / 4++     ",
-                                    "T9 / 14W / 3+              ",
+                                    "T5 / 3W / 2+ / 4++    ",
+                                    "T6 / 3W / 2+ / 4++    ",
+                                    "T7 / 4W / 2+ / 4++    ",
+                                    "T9 / 14W / 3+             ",
                                     "T10 / 11W / 2+            ",
                                     "T10 / 14W / 3+            ",
                                     "T11 / 14W / 3+            ",
@@ -485,6 +485,52 @@
             }
 
             document.getElementById('result').innerHTML = resultString;
+        }
+
+
+        let deferredPrompt;
+        const installButton = document.getElementById('install-button');
+        const installInstructions = document.getElementById('install-instructions');
+
+
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+
+        if (isStandalone) {
+            installButton.style.display = 'none';
+        }
+
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'inline-block'; // Show button
+            installInstructions.textContent = 'Click "Add to Homescreen" to install the app!';
+        });
+
+
+        installButton.addEventListener('click', async () => {
+            if (isIOS) {
+                installInstructions.textContent = 'Tap the Share icon (⬆) in Safari, then select "Add to Home Screen".';
+            } else if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installButton.textContent = 'Installed!';
+                    installButton.classList.add('installed');
+                    setTimeout(() => {
+                        installButton.style.display = 'none';
+                        installInstructions.textContent = '';
+                    }, 2000);
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        if (isIOS && !isStandalone) {
+            installButton.style.display = 'inline-block';
+            installInstructions.textContent = 'Tap the Share icon (⬆) in Safari, then select "Add to Home Screen".';
         }
 
         document.getElementById('attacker').addEventListener('input', calculateDamage);
