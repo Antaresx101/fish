@@ -564,8 +564,7 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installButton.style.display = 'inline-block'; // Show button
-            installInstructions.textContent = 'Click "Add to Homescreen" to install the app!';
+            installButton.style.display = 'inline-block';
         });
 
 
