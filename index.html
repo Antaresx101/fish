@@ -454,8 +454,8 @@
                         pHit = pHit * (2 - pHit);
                         critsHits = (2 - pHit) * (1/6) * attacks;
                     } else if (rerollHitsState === 'Fish for Crits') {
-                        pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
-                        critsHits = (1 + (5/6)) * (1/6) * attacks;
+                        pHit = pHit * (2 - pHit);
+                        critsHits = ((1/6) * (2 - (1/6)))  * attacks;
                     }
 
                     let sustainedHits = 0;
