@@ -1,23 +1,23 @@
 const CACHE_NAME = 'wh-damage-calc-v1';
 const urlsToCache = [
-  '/repository/',
-  '/repository/index.html',
-  '/repository/icon.png',
-  '/repository/icon-192x192.png',
-  '/repository/manifest.json',
-  '/repository/icons/inactive.png',
-  '/repository/icons/reroll_1s_hit.png',
-  '/repository/icons/reroll_hits.png',
-  '/repository/icons/fish_for_hits.png',
-  '/repository/icons/sustained_hits_1.png',
-  '/repository/icons/sustained_hits_2.png',
-  '/repository/icons/sustained_hits_3.png',
-  '/repository/icons/sustained_hits_D3.png',
-  '/repository/icons/lethal_hits.png',
-  '/repository/icons/reroll_1s_wounds.png',
-  '/repository/icons/reroll_wounds.png',
-  '/repository/icons/fish_for_wounds.png',
-  '/repository/icons/devastating_wounds.png'
+  '/dawn/',
+  '/dawn/index.html',
+  '/dawn/icon.png',
+  '/dawn/icon-192x192.png',
+  '/dawn/manifest.json',
+  '/dawn/icons/inactive.png',
+  '/dawn/icons/reroll_1s_hit.png',
+  '/dawn/icons/reroll_hits.png',
+  '/dawn/icons/fish_for_hits.png',
+  '/dawn/icons/sustained_hits_1.png',
+  '/dawn/icons/sustained_hits_2.png',
+  '/dawn/icons/sustained_hits_3.png',
+  '/dawn/icons/sustained_hits_D3.png',
+  '/dawn/icons/lethal_hits.png',
+  '/dawn/icons/reroll_1s_wounds.png',
+  '/dawn/icons/reroll_wounds.png',
+  '/dawn/icons/fish_for_wounds.png',
+  '/dawn/icons/devastating_wounds.png'
 ];
 
 self.addEventListener('install', event => {
