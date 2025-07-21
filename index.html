@@ -16,7 +16,7 @@
             color: #e0e7ff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             margin: 0;
-            padding: 16px;
+            padding: 8px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -115,7 +115,7 @@
             margin-top: 1rem;
             justify-content: center;
         }
-        #copy-button, #format-button, #install-button {
+        #copy-button, #format-button {
             background-color: #2a3756;
             border: none;
             border-radius: 4px;
@@ -126,25 +126,22 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s, transform 0.1s;
         }
-        #copy-button:hover, #format-button:hover, #install-button:hover {
+        #copy-button:hover, #format-button:hover {
             background-color: #3b4a6b;
         }
-        #copy-button:active, #format-button:active, #install-button:active {
+        #copy-button:active, #format-button:active {
             transform: scale(0.95);
         }
-        #copy-button.copied, #format-button.formatted, #install-button.installed {
+        #copy-button.copied, #format-button.formatted {
             background-color: #10b981;
             color: #ffffff;
         }
         #install-instructions {
-            display: none;
+            display: block;
             margin-top: 0.5rem;
             font-size: 0.85rem;
             color: #c7d2fe;
             text-align: center;
-        }
-        @media (display-mode: browser) {
-            #install-instructions { display: block; }
         }
         @media (max-width: 400px) {
             h1 { font-size: 1.25rem; }
@@ -156,7 +153,7 @@
             .ability-button.sustained-3 img { width: 24px; height: 24px; }
             .ability-button.sustained-D3 img { width: 26px; height: 26px; }
             #result { font-size: 0.85rem; white-space: pre-wrap; }
-            #copy-button, #format-button, #install-button {
+            #copy-button, #format-button {
                 font-size: 0.8rem;
                 padding: 0.3rem 1rem;
             }
@@ -181,9 +178,8 @@
         <div class="action-buttons">
             <button id="copy-button">Copy to Clipboard</button>
             <button id="format-button">Format Input</button>
-            <button id="install-button">Add to Homescreen</button>
         </div>
-        <div id="install-instructions"></div>
+        <div id="install-instructions">For offline and faster use, install this PWA using the ⬇ next to the search bar.</div>
     </div>
     <script>
         const abilityStates = {
@@ -235,7 +231,6 @@
         // Copy String
         let resultString = "";
 
-
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
             const stateIndex = currentStates[buttonId];
@@ -261,30 +256,29 @@
             button.addEventListener('click', () => cycleState(button.id));
         });
 
-        function averageDice(expr) {
+        function parseDice(expr, isAP = false) {
+            if (!expr) return isAP ? 0 : 1;
             expr = expr.replace(/\s+/g, '').toUpperCase();
             
-            if (!expr || !/[\dD\+-]/.test(expr)) {
-                return 1; // Default to 1
+            if (!/[\dD\+-]/.test(expr)) {
+                return isAP ? 0 : 1;
             }
 
-            // Averages
+            // Dice expressions (e.g., D3, 2D6+1)
             expr = expr.replace(/(\d*)D(\d+)/gi, (match, countRaw, sidesRaw) => {
-                const count = parseInt(countRaw || '1'); // Default to 1
+                const count = parseInt(countRaw || '1');
                 const sides = parseInt(sidesRaw);
                 if (isNaN(count) || isNaN(sides) || sides < 1) {
-                    return '1';
+                    return isAP ? '0' : '1';
                 }
                 return (count * (sides + 1) / 2).toString();
             });
 
-            // Arithmetic expressions
             try {
                 const tokens = expr.match(/(\d*\.?\d+|\+|-)/g);
                 if (!tokens) {
-                    return 1;
+                    return isAP ? 0 : 1;
                 }
-
                 let result = 0;
                 let currentOperator = '+';
                 for (const token of tokens) {
@@ -293,7 +287,7 @@
                     } else {
                         const num = parseFloat(token);
                         if (isNaN(num)) {
-                            return 1; // Invalid number
+                            return isAP ? 0 : 1;
                         }
                         if (currentOperator === '+') {
                             result += num;
@@ -302,9 +296,10 @@
                         }
                     }
                 }
-                return Math.max(1, result);
+
+                return isAP ? Math.abs(result) : Math.max(1, result);
             } catch (e) {
-                return 1;
+                return isAP ? 0 : 1;
             }
         }
 
@@ -351,7 +346,9 @@
                 }, 2000);
                 return;
             }
-            attackerInput.value = `${attacks}x / BS${hitRoll}+ / S${strength} / -${ap}AP / ${damage}`.replace("++","+").replace("--","-");
+
+            const formattedAP = parseDice(ap, true);
+            attackerInput.value = `${attacks}x / BS${hitRoll}+ / S${strength} / -${formattedAP}AP / ${damage}`.replace("++","+").replace("--","-");
             formatButton.textContent = 'Formatted!';
             formatButton.classList.add('formatted');
             setTimeout(() => {
@@ -395,11 +392,11 @@
                 return;
             }
 
-            const attacks = averageDice(attacksInit);
-            const hitRoll = averageDice(hitRollInit);
-            const strength = averageDice(strengthInit);
-            const ap = averageDice(apInit.startsWith('-') ? apInit.slice(1) : apInit) * (apInit.startsWith('-') ? -1 : 1);
-            const damage = averageDice(damageInit);
+            const attacks = parseDice(attacksInit);
+            const hitRoll = parseDice(hitRollInit);
+            const strength = parseDice(strengthInit);
+            const ap = parseDice(apInit, true);
+            const damage = parseDice(damageInit);
 
             if (isNaN(attacks) || isNaN(hitRoll) || isNaN(strength) || isNaN(ap) || isNaN(damage)) {
                 document.getElementById('result').innerHTML = "Invalid attacker input. Ensure all fields are numbers or valid dice expressions.";
@@ -420,13 +417,12 @@
             if (rerollWoundsState !== 'Inactive') attackerString += ` / ${rerollWoundsState}`;
             if (devastatingWoundsState !== 'Inactive') attackerString += ` / ${devastatingWoundsState}`;
 
-
             // Table
             let resultTable = `<div style="margin: 0; line-height: 1.5;">Attacker:\n${attackerString}</div>
-                            <div style="margin: -10px 0px -30px 0px; line-height: 1.5;">Defenders:</div>
-                            <table style="width: 100%; border-collapse: collapse; margin: 0;">
-                            <tr style="background-color: #3b4a6b;">
-                            </tr>`;
+                              <div style="margin: -10px 0px -30px 0px; line-height: 1.5;">Defenders:</div>
+                              <table style="width: 100%; border-collapse: collapse; margin: 0;">
+                              <tr style="background-color: #3b4a6b;">
+                              </tr>`;
             resultString = attackerString + "\n";
 
             for (let defenderInput of defenderProfiles) {
@@ -455,7 +451,7 @@
                         critsHits = (2 - pHit) * (1/6) * attacks;
                     } else if (rerollHitsState === 'Fish for Crits') {
                         pHit = pHit * (2 - pHit);
-                        critsHits = ((1/6) * (2 - (1/6)))  * attacks;
+                        critsHits = ((1/6) * (2 - (1/6))) * attacks;
                     }
 
                     let sustainedHits = 0;
@@ -544,51 +540,6 @@
             resultTable += `</table>`;
 
             document.getElementById('result').innerHTML = resultTable;
-        }
-
-
-        let deferredPrompt;
-        const installButton = document.getElementById('install-button');
-        const installInstructions = document.getElementById('install-instructions');
-
-
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-
-        if (isStandalone) {
-            installButton.style.display = 'none';
-        }
-
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installButton.style.display = 'inline-block';
-        });
-
-
-        installButton.addEventListener('click', async () => {
-            if (isIOS) {
-                installInstructions.textContent = 'Tap the Share icon (⬆) in Safari, then select "Add to Home Screen".';
-            } else if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installButton.textContent = 'Installed!';
-                    installButton.classList.add('installed');
-                    setTimeout(() => {
-                        installButton.style.display = 'none';
-                        installInstructions.textContent = '';
-                    }, 2000);
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        if (isIOS && !isStandalone) {
-            installButton.style.display = 'inline-block';
-            installInstructions.textContent = 'Tap the Share icon (⬆) in Safari, then select "Add to Home Screen".';
         }
 
         document.getElementById('attacker').addEventListener('input', calculateDamage);
