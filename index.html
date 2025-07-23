@@ -6,7 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
-    <title>Warhammer Damage Calculator</title>
+    <title>DAWN</title>
+    <script>
+    // Cache-busting
+    const VERSION = '1';
+    </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
@@ -563,7 +567,7 @@
                     const modelsSlain = successfulAttacks / attacksPerModel;
                     const totalDamage = successfulAttacks * damage;
 
-                    slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain (cw:${critsWounds} pW:${pWound} co:${woundsCritOn})`;
+                    slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain`;
                     damageValue = `<strong>${totalDamage.toFixed(2)}</strong> dmg`;
                 }
 
@@ -585,9 +589,19 @@
         document.getElementById('copy-button').addEventListener('click', copyToClipboard);
         document.getElementById('format-button').addEventListener('click', formatInput);
 
+        // Service worker updates on page load
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(() => console.log('Service Worker Registered'))
+            navigator.serviceWorker.register(`service-worker.js?v=${VERSION}`)
+                .then(registration => {
+                    console.log('Service Worker Registered');
+
+                    registration.update();
+
+                    // Listen for controller change
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        window.location.reload();
+                    });
+                })
                 .catch(error => console.error('Service Worker Registration Failed:', error));
         }
 
