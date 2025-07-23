@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
-    <title>Warhammer Damage Calculator</title>
+    <title>DAWN</title>
     <script>
-        // Define a single version number for cache-busting
-        const VERSION = '1';
+    // Cache-busting
+    const VERSION = '1';
     </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.png" type="image/png">
@@ -25,17 +25,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-sizing: border-box;
         }
         .container {
             width: 100%;
-            max-width: 90vw; /* Use 90% of viewport width */
-            padding: 12px; /* Reduced padding for more content space */
+            max-width: 90vw;
+            padding: 6px;
             box-sizing: border-box;
         }
         h1 {
             font-size: 1.5rem;
-            margin: 0 0 1rem;
+            margin: 1 0 1rem;
             text-align: center;
             color: #a5b4fc;
         }
@@ -105,32 +104,14 @@
         .ability-button.sustained-3 img { width: 40px; height: 40px; }
         .ability-button.sustained-D3 img { width: 40px; height: 40px; }
         #result {
-            margin-top: 0;
-            padding: 0.75rem; /* Reduced padding */
+            margin-top: 0rem;
+            padding: 0.5rem;
             background-color: #2a3756;
             border-radius: 8px;
             font-size: 0.9rem;
-            line-height: 1.4; /* Improved line spacing */
+            line-height: 1;
             color: #c7d2fe;
-            overflow-x: auto; /* Allow horizontal scrolling if needed */
-        }
-        #result table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-            table-layout: auto; /* Allow columns to adjust based on content */
-        }
-        #result td {
-            padding: 0.5rem;
-            border-bottom: 1px solid #c7d2fe;
-            word-break: break-word; /* Ensure text wraps within cells */
-            vertical-align: top;
-        }
-        #result tr:nth-child(odd) {
-            background-color: #2a3756;
-        }
-        #result tr:nth-child(even) {
-            background-color: #3b4a6b;
+            white-space: pre-wrap;
         }
         .action-buttons {
             display: flex;
@@ -165,30 +146,21 @@
             font-size: 0.85rem;
             color: #c7d2fe;
             text-align: center;
-            word-break: break-word;
         }
-        @media (max-width: 400px) {
+        @media (max-width: 100%) {
             h1 { font-size: 1.25rem; }
             label { font-size: 0.85rem; }
             input { font-size: 0.9rem; padding: 0.5rem; }
-            .container { padding: 8px; } /* Further reduce padding */
             .ability-button { width: 40px; height: 40px; }
-            .ability-button img { width: 28px; height: 28px; }
-            .ability-button.sustained-2 img { width: 32px; height: 32px; }
-            .ability-button.sustained-3 img { width: 32px; height: 32px; }
-            .ability-button.sustained-D3 img { width: 32px; height: 32px; }
-            #result { font-size: 0.8rem; padding: 0.5rem; }
-            #result td { padding: 0.3rem; font-size: 0.75rem; }
+            .ability-button img { width: 40px; height: 40px; }
+            .ability-button.sustained-2 img { width: 40px; height: 40px; }
+            .ability-button.sustained-3 img { width: 40px; height: 40px; }
+            .ability-button.sustained-D3 img { width: 40px; height: 40px; }
+            #result { font-size: 0.85rem; white-space: pre-wrap; }
             #copy-button, #format-button {
                 font-size: 0.8rem;
                 padding: 0.3rem 1rem;
             }
-        }
-        @media (min-width: 401px) and (max-width: 600px) {
-            .container { padding: 12px; }
-            h1 { font-size: 1.75rem; }
-            #result { font-size: 0.95rem; }
-            #result td { padding: 0.6rem; font-size: 0.9rem; }
         }
     </style>
 </head>
