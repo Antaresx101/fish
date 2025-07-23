@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="DAWN">
-    <base href="/dawn/">
-    <title>DAWN</title>
+    <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
+    <title>Warhammer Damage Calculator</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
@@ -93,13 +92,13 @@
             transform: scale(0.95);
         }
         .ability-button img {
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             object-fit: contain;
         }
-        .ability-button.sustained-2 img { width: 26px; height: 26px; }
-        .ability-button.sustained-3 img { width: 28px; height: 28px; }
-        .ability-button.sustained-D3 img { width: 30px; height: 30px; }
+        .ability-button.sustained-2 img { width: 40px; height: 40px; }
+        .ability-button.sustained-3 img { width: 40px; height: 40px; }
+        .ability-button.sustained-D3 img { width: 40px; height: 40px; }
         #result {
             margin-top: 0rem;
             padding: 1rem;
@@ -149,10 +148,10 @@
             label { font-size: 0.85rem; }
             input { font-size: 0.9rem; padding: 0.5rem; }
             .ability-button { width: 40px; height: 40px; }
-            .ability-button img { width: 20px; height: 20px; }
-            .ability-button.sustained-2 img { width: 22px; height: 22px; }
-            .ability-button.sustained-3 img { width: 24px; height: 24px; }
-            .ability-button.sustained-D3 img { width: 26px; height: 26px; }
+            .ability-button img { width: 40px; height: 40px; }
+            .ability-button.sustained-2 img { width: 40px; height: 40px; }
+            .ability-button.sustained-3 img { width: 40px; height: 40px; }
+            .ability-button.sustained-D3 img { width: 40px; height: 40px; }
             #result { font-size: 0.85rem; white-space: pre-wrap; }
             #copy-button, #format-button {
                 font-size: 0.8rem;
@@ -163,7 +162,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>DAWN</h1>
+        <h1>Warhammer Damage Calculator</h1>
         <div class="input-group">
             <label for="attacker">Attacker Profile (Attacks / BS / S / AP / DMG):</label>
             <input type="text" id="attacker" placeholder="e.g., 2,BS3+,5,-2AP,1 dmg or 2/BS3+/5/-2AP/1 dmg">
@@ -232,6 +231,10 @@
         // Copy String
         let resultString = "";
 
+        let hitsCritOnInit = 6;
+        let woundsCritOnInit = 6;
+
+
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
             const stateIndex = currentStates[buttonId];
@@ -241,10 +244,20 @@
                 console.error(`Icon not found for ${buttonId}: ${state}`);
                 return;
             }
+            
+            // Update button title and icon
             button.title = `${buttonId.replace(/-/g, ' ')}: ${state}`;
-            button.classList.toggle('active', state !== 'Inactive');
-            const className = state.includes('Sustained Hits') && state !== 'Sustained Hits 1' && state.match(/[\dD]+/) ? `sustained-${state.match(/[\dD]+/)[0]}` : '';
-            button.innerHTML = `<img src="${iconSrc}" alt="${state}" class="${className}">`;
+            button.innerHTML = `<img src="${iconSrc}" alt="${state}" class="${state.includes('Sustained Hits') && state !== 'Sustained Hits 1' && state.match(/[\dD]+/) ? `sustained-${state.match(/[\dD]+/)[0]}` : ''}">`;
+            
+            if (state !== 'Inactive') {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+            
+            // Force DOM reflow
+            void button.offsetWidth;
+            
             calculateDamage();
         }
 
@@ -253,8 +266,22 @@
             updateButtonState(buttonId);
         }
 
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Attach click event listeners with debouncing
         document.querySelectorAll('.ability-button').forEach(button => {
-            button.addEventListener('click', () => cycleState(button.id));
+            button.addEventListener('click', debounce(() => cycleState(button.id), 100));
+        });
+
+        // Initialize button states on page load
+        document.querySelectorAll('.ability-button').forEach(button => {
+            updateButtonState(button.id);
         });
 
         function parseDice(expr, isAP = false) {
@@ -359,6 +386,11 @@
             calculateDamage();
         }
 
+
+
+        hitsCritOn = 7 - hitsCritOnInit;
+        woundsCritOn = 7 - woundsCritOnInit;
+
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
             const defenderProfiles = [
@@ -378,7 +410,7 @@
 
             const attackerParts = attackerInput.split(/[^a-zA-Z0-9-+]+/).filter(part => part.trim()).map(part => part.trim());
             if (attackerParts.length !== 5) {
-                document.getElementById('result').innerHTML = "Use a format like 2,BS3+,5,-2AP,1 or 2/BS3+/5/-2AP/1 etc.";
+                document.getElementById('result').innerHTML = "Type the stats using space / any delimiter...";
                 return;
             }
 
@@ -426,6 +458,46 @@
                               </tr>`;
             resultString = attackerString + "\n";
 
+
+            let critsHits = 0;
+            let effectiveHitRoll = Math.min(hitRoll, 6);
+            let pHit = (7 - effectiveHitRoll) / 6;
+
+            if (rerollHitsState === 'Reroll 1s Hit') {
+                pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
+                critsHits = (7/6) * (hitsCritOn / 6) * attacks;
+            } else if (rerollHitsState === 'Reroll Hits') {
+                pHit = pHit * (2 - pHit);
+                critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
+            } else if (rerollHitsState === 'Fish for Crits') {
+                pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
+                critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
+            }
+
+
+            let sustainedHits = 0;
+            if (sustainedHitsState !== 'Inactive') {
+                const sustainedNumber = sustainedHitsState === 'Sustained Hits D3' ? '2' : sustainedHitsState.match(/\d+/)?.[0] || '0';
+                if (sustainedNumber) {
+                    sustainedHits = parseInt(sustainedNumber) * critsHits;
+                }
+            }
+
+            let effectiveHits = (attacks * pHit) + sustainedHits;
+            
+
+            let lethalHits = 0;
+            if (lethalHitsState !== 'Inactive') {
+                effectiveHits = effectiveHits - critsHits;
+                lethalHits = critsHits;
+            }
+
+            
+            let critsWounds = 0;
+            let effectiveWoundRoll = 2;
+            let pWound = 1;
+            let devWounds = 0;
+
             for (let defenderInput of defenderProfiles) {
                 if (defenderInput.startsWith("#")) continue;
                 let [toughness, wounds, save, invul = "7", fnp = "7"] = defenderInput.split('/');
@@ -440,36 +512,6 @@
                 let modelsSlain = 0, totalDamage = 0;
 
                 if (toughness !== 0 && wounds !== 0) {
-                    let critsHits = (1/6) * attacks;
-                    let effectiveHitRoll = Math.min(hitRoll, 6);
-                    let pHit = (7 - effectiveHitRoll) / 6;
-
-                    if (rerollHitsState === 'Reroll 1s Hit') {
-                        pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
-                        critsHits = (1 + (1/6)) * (1/6) * attacks;
-                    } else if (rerollHitsState === 'Reroll Hits') {
-                        pHit = pHit * (2 - pHit);
-                        critsHits = (2 - pHit) * (1/6) * attacks;
-                    } else if (rerollHitsState === 'Fish for Crits') {
-                        pHit = pHit * (2 - pHit);
-                        critsHits = ((1/6) * (2 - (1/6))) * attacks;
-                    }
-
-                    let sustainedHits = 0;
-                    if (sustainedHitsState !== 'Inactive') {
-                        const sustainedNumber = sustainedHitsState === 'Sustained Hits D3' ? '2' : sustainedHitsState.match(/\d+/)?.[0] || '0';
-                        if (sustainedNumber) {
-                            sustainedHits = parseInt(sustainedNumber) * critsHits;
-                        }
-                    }
-
-                    let effectiveHits = (attacks * pHit) + sustainedHits;
-
-                    let lethalHits = 0;
-                    if (lethalHitsState !== 'Inactive') {
-                        effectiveHits = effectiveHits - critsHits;
-                        lethalHits = critsHits;
-                    }
 
                     let woundRoll;
                     if (strength >= 2 * toughness) {
@@ -484,27 +526,27 @@
                         woundRoll = 6;
                     }
 
-                    let critWounds = 0;
-                    let effectiveWoundRoll = Math.min(woundRoll, 6);
-                    let pWound = (7 - effectiveWoundRoll) / 6;
+                    critsWounds = (woundsCritOn / 6) * effectiveHits;
+                    effectiveWoundRoll = Math.min(woundRoll, 6);
+                    pWound = (7 - effectiveWoundRoll) / 6;
 
                     if (rerollWoundsState === 'Reroll 1s Wounds') {
                         pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
-                        critWounds = (1 + (1/6)) * (1/6) * attacks;
+                        critsWounds = (7/6) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Reroll Wounds') {
                         pWound = pWound * (2 - pWound);
-                        critWounds = (2 - pWound) * (1/6) * attacks;
+                        critsWounds = (2 - pWound) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Fish for Crits') {
-                        pWound = pWound + (1/6) * ((7 - woundRoll) / 6);
-                        critWounds = (1 + (5/6)) * (1/6) * attacks;
+                        pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
+                        critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
                     }
 
                     let effectiveWounds = effectiveHits * pWound;
 
-                    let devWounds = 0;
+                    devWounds = 0;
                     if (devastatingWoundsState !== 'Inactive') {
-                        effectiveWounds = effectiveWounds - critWounds;
-                        devWounds = critWounds;
+                        effectiveWounds = effectiveWounds - critsWounds;
+                        devWounds = critsWounds;
                     }
 
                     let pSave = Math.min(invul, Math.max(2, save + ap));
@@ -515,17 +557,13 @@
                     }
 
                     let pFNP = fnp > 6 ? 1 : (fnp - 1) / 6;
-                    if (devastatingWoundsState === 'Devastating Wounds') {
-                        pSave = pSave * (5/6);
-                        pFNP = pFNP * (5/6);
-                    }
 
                     const successfulAttacks = ((effectiveWounds + lethalHits) * pSave + devWounds) * pFNP;
                     const attacksPerModel = Math.ceil(wounds / damage);
                     const modelsSlain = successfulAttacks / attacksPerModel;
                     const totalDamage = successfulAttacks * damage;
 
-                    slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain`;
+                    slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain (cw:${critsWounds} pW:${pWound} co:${woundsCritOn})`;
                     damageValue = `<strong>${totalDamage.toFixed(2)}</strong> dmg`;
                 }
 
@@ -548,7 +586,7 @@
         document.getElementById('format-button').addEventListener('click', formatInput);
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/repository/service-worker.js')
+            navigator.serviceWorker.register('service-worker.js')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(error => console.error('Service Worker Registration Failed:', error));
         }
