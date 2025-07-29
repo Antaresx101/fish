@@ -119,7 +119,7 @@
             margin-top: 1rem;
             justify-content: center;
         }
-        #copy-button, #format-button {
+        #copy-button, #format-button, #install-button {
             background-color: #2a3756;
             border: none;
             border-radius: 4px;
@@ -130,10 +130,10 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s, transform 0.1s;
         }
-        #copy-button:hover, #format-button:hover {
+        #copy-button:hover, #format-button:hover, #install-button:hover {
             background-color: #3b4a6b;
         }
-        #copy-button:active, #format-button:active {
+        #copy-button:active, #format-button:active, #install-button:active {
             transform: scale(0.95);
         }
         #copy-button.copied, #format-button.formatted {
@@ -141,8 +141,8 @@
             color: #ffffff;
         }
         #install-instructions {
-            display: block;
-            margin-top: 0.5rem;
+            display: none;
+            margin-top: 1rem;
             font-size: 0.85rem;
             color: #c7d2fe;
             text-align: center;
@@ -157,7 +157,7 @@
             .ability-button.sustained-3 img { width: 40px; height: 40px; }
             .ability-button.sustained-D3 img { width: 40px; height: 40px; }
             #result { font-size: 0.85rem; white-space: pre-wrap; }
-            #copy-button, #format-button {
+            #copy-button, #format-button, #install-button {
                 font-size: 0.8rem;
                 padding: 0.3rem 1rem;
             }
@@ -169,7 +169,7 @@
         <h1>DAWN Calculator</h1>
         <div class="input-group">
             <label for="attacker">Attacker Profile (Attacks / BS / S / AP / DMG):</label>
-            <input type="text" id="attacker" placeholder="">
+            <input type="text" id="attacker" placeholder="e.g., 2,BS3+,5,-2AP,1 dmg or 2/BS3+/5/-2AP/1 dmg">
         </div>
         <div class="button-group">
             <button class="ability-button" id="reroll-hits" title="Reroll Hits: Inactive"><img src="icons/inactive.png" alt="Inactive"></button>
@@ -179,6 +179,11 @@
             <button class="ability-button" id="devastating-wounds" title="Devastating Wounds: Inactive"><img src="icons/inactive.png" alt="Inactive"></button>
         </div>
         <div id="result"></div>
+        <!-- A2HS Install Instructions -->
+        <div id="install-instructions">
+            <p id="install-text" style="font-size: 0.85rem; color: #c7d2fe;">Use the button below to add this calculator to your homescreen / desktop, which will make it behave like an app.</p>
+            <button id="install-button">Install as App ⬇</button>
+        </div>
         <div class="action-buttons">
             <button id="copy-button">Copy to Clipboard</button>
             <button id="format-button">Format Input</button>
@@ -231,12 +236,9 @@
             'devastating-wounds': 0
         };
 
-        // Copy String
         let resultString = "";
-
         let hitsCritOnInit = 6;
         let woundsCritOnInit = 6;
-
 
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
@@ -248,7 +250,6 @@
                 return;
             }
             
-            // Update button title and icon
             button.title = `${buttonId.replace(/-/g, ' ')}: ${state}`;
             button.innerHTML = `<img src="${iconSrc}" alt="${state}" class="${state.includes('Sustained Hits') && state !== 'Sustained Hits 1' && state.match(/[\dD]+/) ? `sustained-${state.match(/[\dD]+/)[0]}` : ''}">`;
             
@@ -258,9 +259,7 @@
                 button.classList.remove('active');
             }
             
-            // Force DOM reflow
             void button.offsetWidth;
-            
             calculateDamage();
         }
 
@@ -277,12 +276,10 @@
             };
         }
 
-        // Attach click event listeners with debouncing
         document.querySelectorAll('.ability-button').forEach(button => {
             button.addEventListener('click', debounce(() => cycleState(button.id), 100));
         });
 
-        // Initialize button states on page load
         document.querySelectorAll('.ability-button').forEach(button => {
             updateButtonState(button.id);
         });
@@ -295,7 +292,6 @@
                 return isAP ? 0 : 1;
             }
 
-            // Dice expressions (e.g., D3, 2D6+1)
             expr = expr.replace(/(\d*)D(\d+)/gi, (match, countRaw, sidesRaw) => {
                 const count = parseInt(countRaw || '1');
                 const sides = parseInt(sidesRaw);
@@ -389,10 +385,8 @@
             calculateDamage();
         }
 
-
-
-        hitsCritOn = 7 - hitsCritOnInit;
-        woundsCritOn = 7 - woundsCritOnInit;
+        let hitsCritOn = 7 - hitsCritOnInit;
+        let woundsCritOn = 7 - woundsCritOnInit;
 
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
@@ -445,7 +439,6 @@
             const rerollWoundsState = abilityStates['reroll-wounds'][currentStates['reroll-wounds']];
             const devastatingWoundsState = abilityStates['devastating-wounds'][currentStates['devastating-wounds']];
 
-            // Attacker profile string
             let attackerString = `<strong>${attacks}x</strong> / <strong>BS${hitRoll}+</strong> / <strong>S${strength}</strong> / <strong>-${ap}AP</strong> / <strong>${damage}</strong>`.replace("--","-");
             if (rerollHitsState !== 'Inactive') attackerString += ` / ${rerollHitsState}`;
             if (sustainedHitsState !== 'Inactive') attackerString += ` / ${sustainedHitsState}`;
@@ -453,7 +446,6 @@
             if (rerollWoundsState !== 'Inactive') attackerString += ` / ${rerollWoundsState}`;
             if (devastatingWoundsState !== 'Inactive') attackerString += ` / ${devastatingWoundsState}`;
 
-            // Table
             let resultTable = `<div style="margin: 0; line-height: 1.5;">Attacker:\n${attackerString}</div>
                               <div style="margin: -10px 0px -30px 0px; line-height: 1.5;">Defenders:</div>
                               <table style="width: 100%; border-collapse: collapse; margin: 0;">
@@ -461,22 +453,23 @@
                               </tr>`;
             resultString = attackerString + "\n";
 
-
-            let critsHits = 0;
+            let critsHits = (hitsCritOn / 6) * attacks;
             let effectiveHitRoll = Math.min(hitRoll, 6);
             let pHit = (7 - effectiveHitRoll) / 6;
 
-            if (rerollHitsState === 'Reroll 1s Hit') {
+            if (hitRoll === 1) {
+                pHit = 1;
+                critsHits = 0;
+            } else if (rerollHitsState === 'Reroll 1s Hit') {
                 pHit = pHit + (1/6) * ((7 - hitRoll) / 6);
                 critsHits = (7/6) * (hitsCritOn / 6) * attacks;
             } else if (rerollHitsState === 'Reroll Hits') {
                 pHit = pHit * (2 - pHit);
                 critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             } else if (rerollHitsState === 'Fish for Crits') {
-                pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
-                critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
+                pHit = 0; //pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
+                critsHits = 0; //critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             }
-
 
             let sustainedHits = 0;
             if (sustainedHitsState !== 'Inactive') {
@@ -487,14 +480,12 @@
             }
 
             let effectiveHits = (attacks * pHit) + sustainedHits;
-            
 
             let lethalHits = 0;
             if (lethalHitsState !== 'Inactive') {
-                effectiveHits = effectiveHits - critsHits;
                 lethalHits = critsHits;
+                effectiveHits = effectiveHits - critsHits;
             }
-
             
             let critsWounds = 0;
             let effectiveWoundRoll = 2;
@@ -515,7 +506,6 @@
                 let modelsSlain = 0, totalDamage = 0;
 
                 if (toughness !== 0 && wounds !== 0) {
-
                     let woundRoll;
                     if (strength >= 2 * toughness) {
                         woundRoll = 2;
@@ -540,8 +530,8 @@
                         pWound = pWound * (2 - pWound);
                         critsWounds = (2 - pWound) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Fish for Crits') {
-                        pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
-                        critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
+                        pWound = 0; // pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
+                        critsWounds = 0; // critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
                     }
 
                     let effectiveWounds = effectiveHits * pWound;
@@ -588,20 +578,55 @@
         document.getElementById('copy-button').addEventListener('click', copyToClipboard);
         document.getElementById('format-button').addEventListener('click', formatInput);
 
-        // Service worker updates on page load
+        // Service worker registration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(`service-worker.js?v=${VERSION}`)
                 .then(registration => {
                     console.log('Service Worker Registered');
-
                     registration.update();
-
-                    // Listen for controller change
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         window.location.reload();
                     });
                 })
                 .catch(error => console.error('Service Worker Registration Failed:', error));
+        }
+
+        // A2HS Install
+        let deferredPrompt = null;
+        const installInstructions = document.getElementById('install-instructions');
+        const installButton = document.getElementById('install-button');
+        const installText = document.getElementById('install-text');
+
+        // Standalone mode
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            installInstructions.style.display = 'none';
+        } else {
+            // iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                installText.textContent = 'To install the DAWN Calculator, tap the Share icon in Safari and select "Add to Home Screen".';
+                installButton.style.display = 'none'; // Hide button on iOS
+                installInstructions.style.display = 'block';
+            } else {
+                // Standard browsers with beforeinstallprompt
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    installInstructions.style.display = 'block';
+                });
+
+                installButton.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the A2HS prompt');
+                            installInstructions.style.display = 'none';
+                        }
+                        deferredPrompt = null;
+                    }
+                });
+            }
         }
 
         updateButtonState('reroll-hits');
