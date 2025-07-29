@@ -1,5 +1,5 @@
 const VERSION_PARAM = new URLSearchParams(self.location.search).get('v') || '1';
-const CACHE_NAME = `wh-damage-calc-v${VERSION_PARAM}`;
+const CACHE_NAME = `wh-calc-fish-v${VERSION_PARAM}`;
 const urlsToCache = [
     '/',
     '/index.html',
