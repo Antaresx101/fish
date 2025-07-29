@@ -1,19 +1,19 @@
 {
-  "name": "Dice Analytics w/ Warhammer Numerics",
-  "short_name": "DAWN",
-  "start_url": "/dawn/",
-  "scope": "/dawn/",
+  "name": "Fast Index Stat Helper",
+  "short_name": "FISH",
+  "start_url": "/fish/",
+  "scope": "/fish/",
   "display": "standalone",
   "background_color": "#1e2a44",
   "theme_color": "#a5b4fc",
   "icons": [
     {
-      "src": "/dawn/icon-192x192.png",
+      "src": "/fish/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/dawn/icon.png",
+      "src": "/fish/icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
