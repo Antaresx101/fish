@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
-    <title>DAWN</title>
+    <title>FISH</title>
     <script>
     // Cache-busting
     const VERSION = '1';
@@ -166,7 +166,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>DAWN Calculator</h1>
+        <h1>FISH Calculator</h1>
         <div class="input-group">
             <label for="attacker">Attacker Profile (Attacks / BS / S / AP / DMG):</label>
             <input type="text" id="attacker" placeholder="e.g. 10x BS3+ S4 1AP 1dmg (or just numbers)">
@@ -604,7 +604,7 @@
             // iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS) {
-                installText.textContent = 'To install the DAWN Calculator, tap the Share icon in Safari and select "Add to Home Screen".';
+                installText.textContent = 'To install the FISH Calculator, tap the Share icon in Safari and select "Add to Home Screen".';
                 installButton.style.display = 'none'; // Hide button on iOS
                 installInstructions.style.display = 'block';
             } else {
