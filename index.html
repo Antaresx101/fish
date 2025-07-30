@@ -239,6 +239,7 @@
         let resultString = "";
         let hitsCritOnInit = 6;
         let woundsCritOnInit = 6;
+        let lastAttackerInput = "";
 
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
@@ -348,6 +349,7 @@
                     copyButton.textContent = 'Copy to Clipboard';
                 }, 2000);
             });
+            return false; // Prevent event propagation
         }
 
         function formatInput() {
@@ -359,7 +361,6 @@
                 setTimeout(() => {
                     formatButton.textContent = 'Format Input';
                 }, 2000);
-                returnwash
                 return;
             }
             const attacks = parts[0].match(/[\dD\+\/-]+/)?.[0];
@@ -391,6 +392,10 @@
 
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
+            if (!attackerInput || attackerInput === lastAttackerInput) {
+                return;
+            }
+            lastAttackerInput = attackerInput;
             const defenderProfiles = [
                 "T3 / 1W / 5+                ",
                 "T4 / 2W / 3+                ",
@@ -468,8 +473,8 @@
                 pHit = pHit * (2 - pHit);
                 critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             } else if (rerollHitsState === 'Fish for Crits') {
-                pHit = (1/6) + (5/6) * ((7 - hitRoll) / 6);
-                critsHits = (1/6) * attacks + (5/6) * (1/6) * attacks;
+                pHit = 0; //pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
+                critsHits = 0; //critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             }
 
             let sustainedHits = 0;
@@ -531,8 +536,8 @@
                         pWound = pWound * (2 - pWound);
                         critsWounds = (2 - pWound) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Fish for Crits') {
-                        pWound = (1/6) + (5/6) * ((7 - woundRoll) / 6);
-                        critsWounds = (1/6) * effectiveHits + (5/6) * (1/6) * effectiveHits;
+                        pWound = 0; // pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
+                        critsWounds = 0; // critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
                     }
 
                     let effectiveWounds = effectiveHits * pWound;
