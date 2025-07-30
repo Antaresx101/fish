@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
-    <title>FISH</title>
+    <meta name="apple-mobile-web-app-title" content="FISH">
+    <title>FISH: Fast Attack Stat Helper</title>
     <script>
-    // Cache-busting
-    const VERSION = '1';
+        // Cache-busting
+        const VERSION = '2'; // Increment version for changes
     </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.png" type="image/png">
@@ -25,6 +25,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
         }
         .container {
             width: 100%;
@@ -34,7 +35,7 @@
         }
         h1 {
             font-size: 1.5rem;
-            margin: 1 0 1rem;
+            margin: 0 0 1rem;
             text-align: center;
             color: #a5b4fc;
         }
@@ -104,14 +105,39 @@
         .ability-button.sustained-3 img { width: 40px; height: 40px; }
         .ability-button.sustained-D3 img { width: 40px; height: 40px; }
         #result {
-            margin-top: 0rem;
+            margin-top: 0;
             padding: 0.5rem;
             background-color: #2a3756;
             border-radius: 8px;
             font-size: 0.9rem;
-            line-height: 1;
+            line-height: 1.4;
             color: #c7d2fe;
-            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        #result table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            table-layout: auto;
+        }
+        #result th, #result td {
+            padding: 0.5rem;
+            border-bottom: 1px solid #c7d2fe;
+            word-break: break-word;
+            vertical-align: top;
+        }
+        #result th {
+            background-color: #3b4a6b;
+            text-align: left;
+        }
+        #result td {
+            text-align: right;
+        }
+        #result td:first-child {
+            text-align: left;
+        }
+        #result tr:nth-child(even) {
+            background-color: #3b4a6b;
         }
         .action-buttons {
             display: flex;
@@ -146,27 +172,36 @@
             font-size: 0.85rem;
             color: #c7d2fe;
             text-align: center;
+            word-break: break-word;
         }
-        @media (max-width: 95vw) {
+        @media (max-width: 400px) {
             h1 { font-size: 1.25rem; }
             label { font-size: 0.85rem; }
             input { font-size: 0.9rem; padding: 0.5rem; }
+            .container { padding: 8px; }
             .ability-button { width: 40px; height: 40px; }
-            .ability-button img { width: 40px; height: 40px; }
-            .ability-button.sustained-2 img { width: 40px; height: 40px; }
-            .ability-button.sustained-3 img { width: 40px; height: 40px; }
-            .ability-button.sustained-D3 img { width: 40px; height: 40px; }
-            #result { font-size: 0.85rem; white-space: pre-wrap; }
+            .ability-button img { width: 28px; height: 28px; }
+            .ability-button.sustained-2 img { width: 32px; height: 32px; }
+            .ability-button.sustained-3 img { width: 32px; height: 32px; }
+            .ability-button.sustained-D3 img { width: 32px; height: 32px; }
+            #result { font-size: 0.8rem; padding: 0.5rem; }
+            #result th, #result td { padding: 0.3rem; font-size: 0.75rem; }
             #copy-button, #format-button, #install-button {
                 font-size: 0.8rem;
                 padding: 0.3rem 1rem;
             }
         }
+        @media (min-width: 401px) and (max-width: 600px) {
+            .container { padding: 12px; }
+            h1 { font-size: 1.75rem; }
+            #result { font-size: 0.95rem; }
+            #result th, #result td { padding: 0.6rem; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>FISH Calculator</h1>
+        <h1>FISH: Fast Attack Stat Helper</h1>
         <div class="input-group">
             <label for="attacker">Attacker Profile (Attacks / BS / S / AP / DMG):</label>
             <input type="text" id="attacker" placeholder="e.g. 10x BS3+ S4 1AP 1dmg (or just numbers)">
@@ -179,7 +214,6 @@
             <button class="ability-button" id="devastating-wounds" title="Devastating Wounds: Inactive"><img src="icons/inactive.png" alt="Inactive"></button>
         </div>
         <div id="result"></div>
-        <!-- A2HS Install Instructions -->
         <div id="install-instructions">
             <p id="install-text" style="font-size: 0.85rem; color: #c7d2fe;">Use the button below to add this calculator to your homescreen / desktop, which will make it behave like an app.</p>
             <button id="install-button">Install as App ⬇</button>
@@ -190,6 +224,14 @@
         </div>
     </div>
     <script>
+        // Apply cache-busting to resources
+        document.querySelector('link[rel="manifest"]').href += `?v=${VERSION}`;
+        document.querySelector('link[rel="icon"]').href += `?v=${VERSION}`;
+        document.querySelector('link[rel="apple-touch-icon"]').href += `?v=${VERSION}`;
+        document.querySelectorAll('.ability-button img').forEach(img => {
+            img.src += `?v=${VERSION}`;
+        });
+
         const abilityStates = {
             'reroll-hits': ['Inactive', 'Reroll 1s Hit', 'Reroll Hits', 'Fish for Crits'],
             'sustained-hits': ['Inactive', 'Sustained Hits 1', 'Sustained Hits 2', 'Sustained Hits 3', 'Sustained Hits D3'],
@@ -200,31 +242,31 @@
 
         const iconMap = {
             'reroll-hits': {
-                'Inactive': 'icons/inactive.png',
-                'Reroll 1s Hit': 'icons/reroll_1s_hit.png',
-                'Reroll Hits': 'icons/reroll_hits.png',
-                'Fish for Crits': 'icons/fish_for_hits.png'
+                'Inactive': `icons/inactive.png?v=${VERSION}`,
+                'Reroll 1s Hit': `icons/reroll_1s_hit.png?v=${VERSION}`,
+                'Reroll Hits': `icons/reroll_hits.png?v=${VERSION}`,
+                'Fish for Crits': `icons/fish_for_hits.png?v=${VERSION}`
             },
             'sustained-hits': {
-                'Inactive': 'icons/inactive.png',
-                'Sustained Hits 1': 'icons/sustained_hits_1.png',
-                'Sustained Hits 2': 'icons/sustained_hits_2.png',
-                'Sustained Hits 3': 'icons/sustained_hits_3.png',
-                'Sustained Hits D3': 'icons/sustained_hits_D3.png'
+                'Inactive': `icons/inactive.png?v=${VERSION}`,
+                'Sustained Hits 1': `icons/sustained_hits_1.png?v=${VERSION}`,
+                'Sustained Hits 2': `icons/sustained_hits_2.png?v=${VERSION}`,
+                'Sustained Hits 3': `icons/sustained_hits_3.png?v=${VERSION}`,
+                'Sustained Hits D3': `icons/sustained_hits_D3.png?v=${VERSION}`
             },
             'lethal-hits': {
-                'Inactive': 'icons/inactive.png',
-                'Lethal Hits': 'icons/lethal_hits.png'
+                'Inactive': `icons/inactive.png?v=${VERSION}`,
+                'Lethal Hits': `icons/lethal_hits.png?v=${VERSION}`
             },
             'reroll-wounds': {
-                'Inactive': 'icons/inactive.png',
-                'Reroll 1s Wounds': 'icons/reroll_1s_wounds.png',
-                'Reroll Wounds': 'icons/reroll_wounds.png',
-                'Fish for Crits': 'icons/fish_for_wounds.png'
+                'Inactive': `icons/inactive.png?v=${VERSION}`,
+                'Reroll 1s Wounds': `icons/reroll_1s_wounds.png?v=${VERSION}`,
+                'Reroll Wounds': `icons/reroll_wounds.png?v=${VERSION}`,
+                'Fish for Crits': `icons/fish_for_wounds.png?v=${VERSION}`
             },
             'devastating-wounds': {
-                'Inactive': 'icons/inactive.png',
-                'Devastating Wounds': 'icons/devastating_wounds.png'
+                'Inactive': `icons/inactive.png?v=${VERSION}`,
+                'Devastating Wounds': `icons/devastating_wounds.png?v=${VERSION}`
             }
         };
 
@@ -348,6 +390,8 @@
                     copyButton.textContent = 'Copy to Clipboard';
                 }, 2000);
             });
+            // Prevent recalculation
+            return false;
         }
 
         function formatInput() {
@@ -384,9 +428,6 @@
             }, 2000);
             calculateDamage();
         }
-
-        let hitsCritOn = 7 - hitsCritOnInit;
-        let woundsCritOn = 7 - woundsCritOnInit;
 
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
@@ -447,12 +488,17 @@
             if (devastatingWoundsState !== 'Inactive') attackerString += ` / ${devastatingWoundsState}`;
 
             let resultTable = `<div style="margin: 0; line-height: 1.5;">Attacker:\n${attackerString}</div>
-                              <div style="margin: -10px 0px -30px 0px; line-height: 1.5;">Defenders:</div>
+                              <div style="margin: 0.5rem 0; line-height: 1.5;">Defenders:</div>
                               <table style="width: 100%; border-collapse: collapse; margin: 0;">
-                              <tr style="background-color: #3b4a6b;">
+                              <tr>
+                                  <th>Profile</th>
+                                  <th>Models Slain</th>
+                                  <th>Damage</th>
                               </tr>`;
             resultString = attackerString + "\n";
 
+            let hitsCritOn = 7 - hitsCritOnInit; // e.g., 6+ crit -> 1/6
+            let woundsCritOn = 7 - woundsCritOnInit; // e.g., 6+ crit -> 1/6
             let critsHits = (hitsCritOn / 6) * attacks;
             let effectiveHitRoll = Math.min(hitRoll, 6);
             let pHit = (7 - effectiveHitRoll) / 6;
@@ -467,8 +513,8 @@
                 pHit = pHit * (2 - pHit);
                 critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             } else if (rerollHitsState === 'Fish for Crits') {
-                pHit = 0; //pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
-                critsHits = 0; //critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
+                pHit = (1/6) + (5/6) * ((7 - hitRoll) / 6); // Crits + non-crits after reroll
+                critsHits = (1/6) * attacks + (5/6) * (1/6) * attacks; // Crits on initial + rerolls
             }
 
             let sustainedHits = 0;
@@ -486,7 +532,7 @@
                 lethalHits = critsHits;
                 effectiveHits = effectiveHits - critsHits;
             }
-            
+
             let critsWounds = 0;
             let effectiveWoundRoll = 2;
             let pWound = 1;
@@ -530,8 +576,8 @@
                         pWound = pWound * (2 - pWound);
                         critsWounds = (2 - pWound) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Fish for Crits') {
-                        pWound = 0; // pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
-                        critsWounds = 0; // critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
+                        pWound = (1/6) + (5/6) * ((7 - woundRoll) / 6); // Crits + non-crits after reroll
+                        critsWounds = (1/6) * effectiveHits + (5/6) * (1/6) * effectiveHits; // Crits on initial + rerolls
                     }
 
                     let effectiveWounds = effectiveHits * pWound;
@@ -553,19 +599,19 @@
 
                     const successfulAttacks = ((effectiveWounds + lethalHits) * pSave + devWounds) * pFNP;
                     const attacksPerModel = Math.ceil(wounds / damage);
-                    const modelsSlain = successfulAttacks / attacksPerModel;
-                    const totalDamage = successfulAttacks * damage;
+                    modelsSlain = successfulAttacks / attacksPerModel;
+                    totalDamage = successfulAttacks * damage;
 
                     slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain`;
                     damageValue = `<strong>${totalDamage.toFixed(2)}</strong> dmg`;
                 }
 
-                resultString += `<strong>${defenderInput}: ${modelsSlain.toFixed(2)}</strong> slain | <strong>${totalDamage.toFixed(2)}</strong> dmg\n`;
+                resultString += `<strong>${defenderInput.trim()}</strong>: ${modelsSlain.toFixed(2)} slain | ${totalDamage.toFixed(2)} dmg\n`;
                 
-                resultTable += `<tr style="background-color: #2a3756;">
-                                    <td style="padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${defenderInput.trim()}</td>
-                                    <td style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${slainValue}</td>
-                                    <td style="text-align: right; padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${damageValue}</td>
+                resultTable += `<tr>
+                                    <td>${defenderInput.trim()}</td>
+                                    <td>${slainValue}</td>
+                                    <td>${damageValue}</td>
                                 </tr>`;
             }
 
@@ -597,18 +643,15 @@
         const installButton = document.getElementById('install-button');
         const installText = document.getElementById('install-text');
 
-        // Standalone mode
         if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
             installInstructions.style.display = 'none';
         } else {
-            // iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS) {
                 installText.textContent = 'To install the FISH Calculator, tap the Share icon in Safari and select "Add to Home Screen".';
-                installButton.style.display = 'none'; // Hide button on iOS
+                installButton.style.display = 'none';
                 installInstructions.style.display = 'block';
             } else {
-                // Standard browsers with beforeinstallprompt
                 window.addEventListener('beforeinstallprompt', (e) => {
                     e.preventDefault();
                     deferredPrompt = e;
