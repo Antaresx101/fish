@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="WH Damage Calc">
+    <meta name="apple-mobile-web-app-title" content="FISH">
     <title>FISH</title>
     <script>
     // Cache-busting
@@ -467,8 +467,8 @@
                 pHit = pHit * (2 - pHit);
                 critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
             } else if (rerollHitsState === 'Fish for Crits') {
-                pHit = 0; //pHit = hitsCritOn + (6 - hitsCritOn - hitRoll) / 6 + ((hitsCritOn * hitRoll)/36) + (hitRoll * (7 - hitRoll - hitsCritOn) / 36);
-                critsHits = 0; //critsHits = (2 - pHit) * (hitsCritOn / 6) * attacks;
+                pHit = (hitsCritOn / 6) + ((6 - hitsCritOn) / 6) * ((7 - hitRoll) / 6);
+                critsHits = (hitsCritOn / 6) * attacks + ((6 - hitsCritOn) / 6) * (hitsCritOn / 6) * attacks;
             }
 
             let sustainedHits = 0;
@@ -487,7 +487,7 @@
                 effectiveHits = effectiveHits - critsHits;
             }
             
-            let critsWounds = 0;
+            let critsWounds = (woundsCritOn / 6) * effectiveHits;
             let effectiveWoundRoll = 2;
             let pWound = 1;
             let devWounds = 0;
@@ -519,7 +519,6 @@
                         woundRoll = 6;
                     }
 
-                    critsWounds = (woundsCritOn / 6) * effectiveHits;
                     effectiveWoundRoll = Math.min(woundRoll, 6);
                     pWound = (7 - effectiveWoundRoll) / 6;
 
@@ -530,8 +529,8 @@
                         pWound = pWound * (2 - pWound);
                         critsWounds = (2 - pWound) * (woundsCritOn / 6) * effectiveHits;
                     } else if (rerollWoundsState === 'Fish for Crits') {
-                        pWound = 0; // pWound = woundsCritOn + (6 - woundsCritOn - woundRoll) / 6 + ((woundsCritOn * woundRoll)/36) + (woundRoll * (7 - woundRoll - woundsCritOn) / 36);
-                        critsWounds = 0; // critsWounds = (2 - (woundsCritOn/6)) * (woundsCritOn/6) * effectiveHits;
+                        pWound = (woundsCritOn / 6) + ((6 - woundsCritOn) / 6) * ((7 - woundRoll) / 6);
+                        critsWounds = (woundsCritOn / 6) * effectiveHits + ((6 - woundsCritOn) / 6) * (woundsCritOn / 6) * effectiveHits;
                     }
 
                     let effectiveWounds = effectiveHits * pWound;
@@ -558,9 +557,10 @@
 
                     slainValue = `<strong>${modelsSlain.toFixed(2)}</strong> slain`;
                     damageValue = `<strong>${totalDamage.toFixed(2)}</strong> dmg`;
+                    resultString += `<strong>${defenderInput}: ${modelsSlain.toFixed(2)}</strong> slain | <strong>${totalDamage.toFixed(2)}</strong> dmg\n`;
                 }
 
-                resultString += `<strong>${defenderInput}: ${modelsSlain.toFixed(2)}</strong> slain | <strong>${totalDamage.toFixed(2)}</strong> dmg\n`;
+                
                 
                 resultTable += `<tr style="background-color: #2a3756;">
                                     <td style="padding: 0.5rem; border-bottom: 1px solid #c7d2fe;">${defenderInput.trim()}</td>
