@@ -239,7 +239,6 @@
         let resultString = "";
         let hitsCritOnInit = 6;
         let woundsCritOnInit = 6;
-        let lastAttackerInput = "";
 
         function updateButtonState(buttonId) {
             const button = document.getElementById(buttonId);
@@ -349,7 +348,6 @@
                     copyButton.textContent = 'Copy to Clipboard';
                 }, 2000);
             });
-            return false; // Prevent event propagation
         }
 
         function formatInput() {
@@ -392,10 +390,6 @@
 
         function calculateDamage() {
             const attackerInput = document.getElementById('attacker').value;
-            if (!attackerInput || attackerInput === lastAttackerInput) {
-                return;
-            }
-            lastAttackerInput = attackerInput;
             const defenderProfiles = [
                 "T3 / 1W / 5+                ",
                 "T4 / 2W / 3+                ",
