@@ -7,6 +7,9 @@ const urlsToCache = [
     '/icon.png',
     '/icon-192x192.png',
     '/icons/inactive.png',
+    '/icons/1H.png',
+    '/icons/1W.png',
+    '/icons/1HW.png',
     '/icons/reroll_1s_hit.png',
     '/icons/reroll_hits.png',
     '/icons/fish_for_hits.png',
@@ -87,3 +90,4 @@ self.addEventListener('fetch', event => {
         );
     }
 });
+
